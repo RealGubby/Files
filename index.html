@@ -73,7 +73,7 @@
       background: #161b22;
       border: 1px solid #30363d;
       margin-bottom: 8px;
-      padding: 12px 16px;
+      padding: 14px 16px;
       border-radius: 6px;
       display: flex;
       justify-content: space-between;
@@ -86,7 +86,10 @@
     a {
       color: #58a6ff;
       text-decoration: none;
-      font-weight: 500;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     a:hover {
       text-decoration: underline;
@@ -98,6 +101,15 @@
     .status {
       color: #8b949e;
       font-style: italic;
+    }
+    .rar-info {
+      background: #161b22;
+      border-left: 4px solid #e3b341;
+      padding: 10px 14px;
+      border-radius: 4px;
+      font-size: 0.9em;
+      margin-bottom: 16px;
+      color: #d29922;
     }
   </style>
 </head>
@@ -115,16 +127,17 @@
 
   <!-- Şifre Doğruysa Açılacak İçerik -->
   <div id="content">
-    <h2>📂 Wp_Content Dosya Listesi</h2>
+    <h2>📦 İndirilebilir Dosya</h2>
+    <div class="rar-info">🔑 RAR Dosyası Açılış Şifresi: <strong>Gubby</strong></div>
     <ul id="file-list">
-      <li class="status">Dosyalar yükleniyor...</li>
+      <li class="status">Dosya kontrol ediliyor...</li>
     </ul>
   </div>
 
   <script>
     const username = "RealGubby";
     const repo = "Files";
-    const folderPath = "Wp_Content";
+    const targetFile = "Wp_Content.rar"; // Doğrudan ana dizindeki bu dosyayı arayacak
 
     function checkPassword(event) {
       event.preventDefault();
@@ -144,31 +157,23 @@
     async function fetchFiles() {
       const listElement = document.getElementById("file-list");
       try {
-        const response = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${folderPath}`);
+        const response = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${targetFile}`);
         
         if (!response.ok) {
-          throw new Error("'Wp_Content' klasörü bulunamadı veya repo adı hatalı.");
+          throw new Error("'Wp_Content.rar' dosyası ana dizinde bulunamadı.");
         }
         
-        const files = await response.json();
+        const file = await response.json();
         listElement.innerHTML = "";
 
-        if (files.length === 0) {
-          listElement.innerHTML = `<li class="status">'Wp_Content' klasörü boş.</li>`;
-          return;
-        }
+        const li = document.createElement("li");
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        li.innerHTML = `
+          <a href="${file.download_url}" target="_blank" download>🗜️ ${file.name}</a>
+          <span class="size">${sizeMB} MB</span>
+        `;
+        listElement.appendChild(li);
 
-        files.forEach(file => {
-          if (file.type === "file") {
-            const li = document.createElement("li");
-            const sizeKB = (file.size / 1024).toFixed(1);
-            li.innerHTML = `
-              <a href="${file.download_url}" target="_blank" download>${file.name}</a>
-              <span class="size">${sizeKB} KB</span>
-            `;
-            listElement.appendChild(li);
-          }
-        });
       } catch (err) {
         listElement.innerHTML = `<li style="color: #f85149;">Hata: ${err.message}</li>`;
       }
